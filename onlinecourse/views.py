@@ -143,19 +143,13 @@ def extract_answers(request):
         # Calculate the total score
 def show_exam_result(request, course_id, submission_id):
     context = {}
-    course = get_object_or_404(Course, pk=course_id)
-    submission = get_object_or_404(Submission, pk=submission_id)
-    selected_ids = []
-    total = 0
-    q_count = Question.objects.filter(course=course).count()
-    for choice in submission.choices.all():
-        selected_ids.append(choice.id)
-    for question in course.question_set.all():
-        if question.is_get_score(selected_ids):
-            total += 1
-    grade = int(total/q_count * 100)
-    context['grade'] = grade
+    course = Course.objects.get(id = course_id)
+    submit = Submission.objects.get(id = submission_id)
+    selected = Submission.objects.filter(id = submission_id).values_list('choices',flat = True)
+    score = 0
+    for i in submit.choices.all().filter(is_correct=True).values_list('question_id'):
+        score += Question.objects.filter(id=i[0]).first().grade    
+    context['selected'] = selected
+    context['grade'] = score
     context['course'] = course
-    context['selected_ids'] = selected_ids
-    return render(request, 'onlinecourse/exam_result_bootstrap.html', context)
-    
+    return  render(request, 'onlinecourse/exam_result_bootstrap.html', context)
